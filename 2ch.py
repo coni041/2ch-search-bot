@@ -8,7 +8,12 @@ from BeautifulSoup import BeautifulSoup
 url="http://news2.2ch.net/" #2ch url
 now = int(time.time())
 
-def get_thread_list(subject):
+class C2ch:
+    def __init__(self):
+        self.linkdata = []
+        self.get_board_list()
+
+    def get_thread_list(self, subject):
 	threads = []
 	patarn = "(\d+)\.dat<>(.+)\s\((\d+)\)"
 	for line in subject:
@@ -21,8 +26,7 @@ def get_thread_list(subject):
 		}
 		threads.append(thre)
 	return threads
-
-def get_dat(host,board, datnum):
+    def get_dat(self, host, board, datnum):
 	txdata="GET /"+board+"/dat/"+datnum+".dat HTTP/1.0"
 	txheaders={
 		'Accept-Encoding':'gzip',
@@ -31,61 +35,58 @@ def get_dat(host,board, datnum):
 		'Connection':'close'
 	}
 	req = urllib2.Request(url, txdata, txheaders)
-	
 
-def get_subject(host,board):
-    txurl='http://'+host
-    txdata='GET /'+board+'/subject.txt HTTP/1.1'
-    txheaders={
+    def get_subject(self, host,board):
+        txurl='http://'+host
+        txdata='GET /'+board+'/subject.txt HTTP/1.1'
+        txheaders={
 		'Accept-Encoding':'gzip',
 		'Host':host,
 		'User-Agent':'Monazilla/1.00',
 		'Connection':'close'
 	}
-    req = urllib2.Request(txurl,txdata,txheaders)
+        req = urllib2.Request(txurl,txdata,txheaders)
 
-def get_board_list():
-    txurl='http://menu.2ch.net/bbstable.html'
-    txdata='GET HTTP/1.1'
-    txheaders={
-        'Accept-Encoding':'gzip',
-        'Host':'menu.2ch.net',
-        'User-Agent':'Monazilla/1.00',
-        'Connection':'close'
-	}
-    req = urllib2.Request(txurl,txdata,txheaders)
-    r= urllib2.urlopen(req)
-    if( r.code != 200 ):
-    	return None
-    body = r.read()
-    #decod gzip
-    if( r.info().getheaders('Content-Encoding')[0] == 'gzip'):
-    	sf=StringIO.StringIO(body)
-        dec=gzip.GzipFile(fileobj=sf)
-        body=dec.read()
-    return body
-    """
-    result = []
-    patarn = "<A HREF=(.+\.2ch\.net)/(.+)/ TARGET=_blank>(.+)</A>"
-    m=re.search(patarn,body)
-    return m
-    """
-"""
-    res={
-        'host':m.group(1),
-        'board':m.group(2),
-        'board_title':m.group(3)
-    }
-    result.append(res)
-	return result
-"""
+    def get_board_list(self):
+        txurl='http://menu.2ch.net/bbstable.html'
+        txdata='GET HTTP/1.1'
+        txheaders={
+            'Accept-Encoding':'gzip',
+            'Host':'menu.2ch.net',
+            'User-Agent':'Monazilla/1.00',
+            'Connection':'close'
+        }
+        req = urllib2.Request(txurl,txdata,txheaders)
+        r= urllib2.urlopen(req)
+        if( r.code != 200 ):
+            return None
+        body = r.read()
+        #decod gzip
+        if( r.info().getheaders('Content-Encoding')[0] == 'gzip'):
+            sf=StringIO.StringIO(body)
+            dec=gzip.GzipFile(fileobj=sf)
+            body=dec.read()
+        
+        bs = BeautifulSoup(body)
+        links=bs.findAll('a')
+        patarn = 'http://(.+.2ch.net)/(.+)'
+        for link in links:
+            m=re.search(patarn,link['href'])
+            if m==None:
+                continue
+            info = {
+                'host':m.group(1),
+                'board':m.group(2),
+                'title':link.string
+            }
+            self.linkdata.append(info)
 
+##--------------------------------------------
+c2ch = C2ch()
 if __name__=='__main__':
+    """
     url="http://menu.2ch.net"
     body = get_board_list()
-
-    bs = BeautifulSoup(body)
-    links=bs.findAll('a', href=re.compile('.+\.2ch\.net'))
-    for i in links:
+    """
+    for i in c2ch.linkdata:
         print i
-#    print body.decode('shift-jis')
