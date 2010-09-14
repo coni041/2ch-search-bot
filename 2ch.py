@@ -3,6 +3,7 @@
 import urllib2, gzip, StringIO
 import re
 import time
+from BeautifulSoup import BeautifulSoup
 
 url="http://news2.2ch.net/" #2ch url
 now = int(time.time())
@@ -82,6 +83,9 @@ def get_board_list():
 if __name__=='__main__':
     url="http://menu.2ch.net"
     body = get_board_list()
-    fp=open('menu.html','w')
-    fp.write(body)
-    fp.close()
+
+    bs = BeautifulSoup(body)
+    links=bs.findAll('a', href=re.compile('.+\.2ch\.net'))
+    for i in links:
+        print i
+#    print body.decode('shift-jis')
